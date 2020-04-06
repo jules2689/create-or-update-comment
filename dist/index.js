@@ -534,6 +534,7 @@ async function run() {
       body: core.getInput("body"),
       editMode: core.getInput("edit-mode"),
       replaceNewLine: core.getInput("replace-new-line"),
+      commentHash: core.getInput("comment-hash"),
       reactionType: core.getInput("reaction-type")
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
@@ -552,8 +553,26 @@ async function run() {
     }
 
     const octokit = new github.GitHub(inputs.token);
+
+    let commentId = inputs.commentId;
+    core.debug(`Comment ID: '${commentId}'`)
+    if ((commentId == null || commentId === '') && inputs.commentHash) {
+      const { data: issues } = await octokit.issues.listComments({
+        owner: repo[0],
+        repo: repo[1],
+        issue_number: inputs.issueNumber
+      });
+
+      for (const issue of issues) {
+        core.debug(`issue: ${issue.id} // ${issue.body}`)
+        if (issue.body.startsWith(`<!-- ${inputs.commentHash} -->`)) {
+          commentId = issue.id;
+          break;
+        }
+      }
+    }
     
-    if (inputs.commentId) {
+    if (commentId) {
       // Edit a comment
       if (!inputs.body && !inputs.reactionType) {
         core.setFailed("Missing either comment 'body' or 'reaction-type'.");
@@ -567,7 +586,7 @@ async function run() {
           const { data: comment } = await octokit.issues.getComment({
             owner: repo[0],
             repo: repo[1],
-            comment_id: inputs.commentId
+            comment_id: commentId
           });
           commentBody = comment.body + "\n";
         }
@@ -580,18 +599,22 @@ async function run() {
           core.debug(`Replaced new line... Comment body: ${commentBody}`);
         }
 
+        if (inputs.commentHash) {
+          commentBody = `<!-- ${inputs.commentHash} -->` + commentBody;
+        }
+
         await octokit.issues.updateComment({
           owner: repo[0],
           repo: repo[1],
-          comment_id: inputs.commentId,
+          comment_id: commentId,
           body: commentBody
         });
-        core.info(`Updated comment id '${inputs.commentId}'.`);
+        core.info(`Updated comment id '${commentId}'.`);
       }
 
       // Set a comment reaction
       if (inputs.reactionType) {
-        await addReaction(octokit, repo, inputs.commentId, inputs.reactionType);
+        await addReaction(octokit, repo, commentId, inputs.reactionType);
       }
     } else if (inputs.issueNumber) {
       // Create a comment
@@ -606,6 +629,10 @@ async function run() {
       if (inputs.replaceNewLine) {
         commentBody = commentBody.replace(/\\n/g,'\n')
         core.debug(`Replaced new line... Comment body: ${commentBody}`);
+      }
+
+      if (inputs.commentHash) {
+        commentBody = `<!-- ${inputs.commentHash} -->` + commentBody;
       }
 
       const { data: comment } = await octokit.issues.createComment({

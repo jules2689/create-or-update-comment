@@ -16,6 +16,8 @@ inputs:
     description: 'The mode when updating a comment, "replace" or "append".'
   replace-new-line:
     description: 'Replaces the string \n with a new line. Useful for multi-line comments'
+  comment-hash:
+    description: 'A unique string used to update a previous comment when you do not have the ID'
   reaction-type:
     description: 'The reaction to add to the comment.'
 runs:
