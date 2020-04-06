@@ -37,6 +37,7 @@ async function run() {
       commentId: core.getInput("comment-id"),
       body: core.getInput("body"),
       editMode: core.getInput("edit-mode"),
+      replaceNewLine: core.getInput("replace-new-line"),
       reactionType: core.getInput("reaction-type")
     };
     core.debug(`Inputs: ${inspect(inputs)}`);
@@ -77,6 +78,12 @@ async function run() {
 
         commentBody = commentBody + inputs.body;
         core.debug(`Comment body: ${commentBody}`);
+
+        if (inputs.replaceNewLine) {
+          commentBody = commentBody.replace(/\\n/g,'\n')
+          core.debug(`Replaced new line... Comment body: ${commentBody}`);
+        }
+
         await octokit.issues.updateComment({
           owner: repo[0],
           repo: repo[1],
@@ -96,11 +103,20 @@ async function run() {
         core.setFailed("Missing comment 'body'.");
         return;
       }
+
+      let commentBody = inputs.body;
+      core.debug(`Comment body: ${commentBody}`);
+
+      if (inputs.replaceNewLine) {
+        commentBody = commentBody.replace(/\\n/g,'\n')
+        core.debug(`Replaced new line... Comment body: ${commentBody}`);
+      }
+
       const { data: comment } = await octokit.issues.createComment({
         owner: repo[0],
         repo: repo[1],
         issue_number: inputs.issueNumber,
-        body: inputs.body
+        body: commentBody
       });
       core.info(`Created comment on issue '${inputs.issueNumber}'.`);
 

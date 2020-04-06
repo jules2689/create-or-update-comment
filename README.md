@@ -55,6 +55,7 @@ This action was created to help facilitate a GitHub Actions "ChatOps" solution i
 | `comment-id` | The id of the comment to update. | |
 | `body` | The comment body. | |
 | `edit-mode` | The mode when updating a comment, `replace` or `append`. | `append` |
+| `replace-new-line` | Determined whether the `\n` string will be replaces with a newline. | false |
 | `reaction-type` | The reaction to add to the comment. (`+1`, `-1`, `laugh`, `confused`, `heart`, `hooray`, `rocket`, `eyes`) | |
 
 ### Where to find the id of a comment
